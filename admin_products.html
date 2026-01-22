@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý sản phẩm - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --green: #2c5f2d; --red: #e74c3c; }
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--green); color: white; padding: 12px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-add { background: var(--green); }
+        .btn-edit { background: #3498db; }
+        .btn-delete { background: var(--red); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; width: 500px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .admin-nav-bar { background: #2c5f2d; padding: 10px 0; margin-bottom: 20px; display: flex; justify-content: center; gap: 20px; }
+        .admin-nav-bar a { color: white; text-decoration: none; font-weight: bold; padding: 10px 20px; border-radius: 5px; transition: 0.3s; }
+        .admin-nav-bar a:hover { background: #3e7a3f; }
+    </style>
+</head>
+<body>
+
+<nav class="admin-nav-bar">
+    <a href="admin_products.html">QUẢN LÝ SẢN PHẨM</a>
+    <a href="admin_categories.html">QUẢN LÝ DANH MỤC</a>
+    <a href="admin_orders.html">QUẢN TRỊ ĐƠN HÀNG</a>
+    <a href="DoAn.html" style="background: #e74c3c;">THOÁT ADMIN</a>
+</nav>
+
+<div class="container">
+    <div class="header">
+        <h2><i class="fa fa-box"></i> QUẢN LÝ SẢN PHẨM</h2>
+        <button class="btn btn-add" onclick="openProductModal()">+ Thêm sản phẩm</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Giá bán</th>
+                <th>Kho</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="product-list-admin"></tbody>
+    </table>
+</div>
+
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Thêm sản phẩm</h3>
+        <input type="hidden" id="edit-id">
+        <div class="form-group"><label>Tên sản phẩm</label><input type="text" id="sp-ten"></div>
+        <div class="form-group"><label>Giá bán (VNĐ)</label><input type="number" id="sp-gia"></div>
+        <div class="form-group"><label>Link ảnh (URL)</label><input type="text" id="sp-anh"></div>
+        <div class="form-group"><label>Phân loại</label><input type="text" id="sp-phanloai"></div>
+        <div class="form-group"><label>Số lượng kho</label><input type="number" id="sp-kho"></div>
+        <div class="form-group"><label>Danh mục</label><select id="sp-danhmuc"></select></div>
+        <div style="text-align: right; margin-top: 20px;">
+            <button class="btn" onclick="closeModal()" style="color: #666;">Hủy</button>
+            <button class="btn btn-add" onclick="saveProduct()">Lưu sản phẩm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // Cho trang admin_orders.html hoặc admin_categories.html
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.VaiTro !== 'admin') {
+        alert("Bạn không có quyền truy cập vùng này!");
+        window.location.href = 'DoAn.html';
+    }
+
+    // Cho trang profile.html
+    if (!user) {
+        window.location.href = 'DoAn.html';
+    }
+
+    let products = [];
+    async function init() {
+        const resCat = await fetch('https://nongsansonla.loca.lt/api/danhmuc');
+        const categories = await resCat.json();
+        document.getElementById('sp-danhmuc').innerHTML = categories.map(c => 
+            `<option value="${c.MaDanhMuc}">${c.TenDanhMuc}</option>`).join('');
+        loadProducts();
+    }
+
+    async function loadProducts() {
+        const res = await fetch('https://nongsansonla.loca.lt/api/sanpham');
+        products = await res.json();
+        document.getElementById('product-list-admin').innerHTML = products.map(sp => `
+            <tr>
+                <td><img src="${sp.LinkAnh || ''}"></td>
+                <td>${sp.TenSanPham}</td>
+                <td style="color:red">${Number(sp.GiaBan).toLocaleString()}đ</td>
+                <td>${sp.TonKho}</td>
+                <td>
+                    <button class="btn btn-edit" onclick="openProductModal(${sp.MaSanPham})"><i class="fa fa-edit"></i></button>
+                    <button class="btn btn-delete" onclick="deleteProduct(${sp.MaSanPham})"><i class="fa fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function openProductModal(id = null) {
+        document.getElementById('productModal').style.display = 'flex';
+        if(id) {
+            const sp = products.find(p => p.MaSanPham === id);
+            document.getElementById('modalTitle').innerText = "Sửa sản phẩm";
+            document.getElementById('edit-id').value = id;
+            document.getElementById('sp-ten').value = sp.TenSanPham;
+            document.getElementById('sp-gia').value = sp.GiaBan;
+            document.getElementById('sp-anh').value = sp.LinkAnh;
+            document.getElementById('sp-kho').value = sp.TonKho;
+            document.getElementById('sp-danhmuc').value = sp.MaDanhMuc;
+            document.getElementById('sp-phanloai').value = sp.PhanLoai || "";
+        } else {
+            document.getElementById('modalTitle').innerText = "Thêm sản phẩm mới";
+            document.getElementById('edit-id').value = "";
+            document.getElementById('sp-ten').value = ""; document.getElementById('sp-gia').value = "";
+            document.getElementById('sp-anh').value = ""; document.getElementById('sp-kho').value = "";
+            document.getElementById('sp-phanloai').value = "";
+        }
+    }
+
+    function closeModal() { document.getElementById('productModal').style.display = 'none'; }
+
+    // Hàm Lưu dữ liệu: Tự động nhận diện Thêm mới hoặc Sửa dựa trên edit-id
+    async function saveProduct() {
+        const id = document.getElementById('edit-id').value;
+        const danhMucId = document.getElementById('sp-danhmuc').value;
+        
+        // Kiểm tra xem ID danh mục có hợp lệ không trước khi gửi
+        console.log("Đang gán sản phẩm vào danh mục ID:", danhMucId);
+        
+        if (!danhMucId) {
+            alert("Vui lòng chọn một danh mục hợp lệ!");
+            return;
+        }
+
+        const data = {
+            ten: document.getElementById('sp-ten').value,
+            gia: document.getElementById('sp-gia').value,
+            anh: document.getElementById('sp-anh').value,
+            kho: document.getElementById('sp-kho').value,
+            danhMuc: danhMucId, // Đây là giá trị gây lỗi nếu không khớp SQL
+            phanLoai: document.getElementById('sp-phanloai').value
+        };
+
+        if (!data.ten || !data.gia) return alert("Vui lòng nhập Tên và Giá!");
+
+        // Cấu hình URL và Phương thức (Có ID là PUT để sửa, không ID là POST để thêm)
+        const url = id ? `https://nongsansonla.loca.lt/api/admin/sanpham/${id}` : 'https://nongsansonla.loca.lt/api/admin/sanpham';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) {
+                alert("✅ Thao tác thành công!");
+                closeModal();
+                loadProducts(); // Tải lại bảng sau khi lưu thành công
+            } else {
+                alert("❌ Lỗi: " + result.error);
+            }
+        } catch (err) { 
+            alert("❌ Lỗi kết nối máy chủ! Hãy kiểm tra Server đã chạy chưa."); 
+        }
+    }
+
+    async function deleteProduct(id) {
+        if(confirm("Xóa sản phẩm này?")) {
+            const res = await fetch(`https://nongsansonla.loca.lt/api/admin/sanpham/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) loadProducts();
+        }
+    }
+    window.onload = init;
+</script>
+</body>
+</html>

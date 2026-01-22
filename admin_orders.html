@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Trị Đơn Hàng - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .admin-container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        header { border-bottom: 2px solid #2c5f2d; margin-bottom: 20px; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; table-layout: auto; }
+        th { background: #2c5f2d; color: white; padding: 12px; text-align: left; font-size: 13px; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: top; }
+        
+        /* Cột địa chỉ hiển thị rộng phù hợp nội dung */
+        .address-col { 
+            min-width: 400px; 
+            line-height: 1.6; 
+            color: #333; 
+            word-wrap: break-word; 
+            white-space: normal; 
+            background: #fdfdfd;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #d32f2f;
+        }
+
+        .status-select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100%; cursor: pointer; }
+        .payment-btn { 
+            font-size: 11px; cursor: pointer; border: none; padding: 8px; border-radius: 5px; 
+            color: white; margin-top: 5px; width: 100%; background: #2c5f2d;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header><h2><i class="fa fa-tasks"></i> QUẢN TRỊ ĐƠN HÀNG</h2></header>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Mã Đơn</th>
+                    <th style="width: 180px;">Khách Hàng</th>
+                    <th>Địa Chỉ Giao Chi Tiết</th>
+                    <th style="width: 150px;">Vận Chuyển</th>
+                    <th style="width: 180px;">Thanh Toán (Check)</th>
+                    <th style="width: 120px;">Tổng Tiền</th>
+                    <th style="width: 180px;">Trạng Thái Đơn</th>
+                </tr>
+            </thead>
+            <tbody id="admin-order-list"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Cho trang admin_orders.html hoặc admin_categories.html
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.VaiTro !== 'admin') {
+            alert("Bạn không có quyền truy cập vùng này!");
+            window.location.href = 'DoAn.html';
+        }
+
+        // Cho trang profile.html
+        if (!user) {
+            window.location.href = 'DoAn.html';
+        }
+        async function loadOrders() {
+            try {
+                const res = await fetch('https://nongsansonla.loca.lt/api/admin/donhang');
+                const data = await res.json();
+                const list = document.getElementById('admin-order-list');
+                
+                list.innerHTML = data.map(o => {
+                    const isPaid = o.TrangThaiThanhToan === "Đã thanh toán";
+                    return `
+                        <tr>
+                            <td><strong>#${o.MaDonHang}</strong></td>
+                            <td>
+                                <strong>${o.TenKhachHang}</strong><br>
+                                <small><i class="fa fa-phone"></i> ${o.SoDienThoai}</small>
+                            </td>
+                            <td>
+                                <div class="address-col">
+                                    <i class="fa fa-map-marker-alt" style="color:#d32f2f"></i> ${o.DiaChiGiaoHang}
+                                </div>
+                            </td>
+                            <td><small>${o.HinhThucGiaoHang}</small></td>
+                            <td>
+                                <span style="color:${isPaid ? 'green' : 'orange'}; font-weight:bold">● ${o.TrangThaiThanhToan}</span><br>
+                                ${!isPaid ? `<button class="payment-btn" onclick="confirmPayment(${o.MaDonHang})"><i class="fa fa-check-circle"></i> Xác nhận thu tiền</button>` : ''}
+                            </td>
+                            <td style="color:red; font-weight:bold">${o.TongTien.toLocaleString()} đ</td>
+                            <td>
+                                <select class="status-select" onchange="updateStatus(${o.MaDonHang}, this.value)">
+                                    <option value="Chờ xác nhận" ${o.TrangThaiDonHang === 'Chờ xác nhận' ? 'selected' : ''}>Chờ xác nhận</option>
+                                    <option value="Đã xác nhận" ${o.TrangThaiDonHang === 'Đã xác nhận' ? 'selected' : ''}>Đã xác nhận</option>
+                                    <option value="Đang giao" ${o.TrangThaiDonHang === 'Đang giao' ? 'selected' : ''}>Đang giao</option>
+                                    <option value="Hoàn thành" ${o.TrangThaiDonHang === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        async function confirmPayment(id) {
+            if(!confirm("Xác nhận đã thu đủ tiền cho đơn hàng này?")) return;
+            try {
+                const res = await fetch(`https://nongsansonla.loca.lt/api/admin/donhang/thanhtoan/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trangThaiThanhToan: "Đã thanh toán" })
+                });
+                if (res.ok) { alert("✅ Xác nhận thành công!"); loadOrders(); }
+            } catch (err) { alert("Lỗi kết nối!"); }
+        }
+
+        async function updateStatus(id, status) {
+            await fetch(`/api/admin/donhang/vanchuyen/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trangThaiDonHang: status })
+            });
+        }
+
+        window.onload = loadOrders;
+    </script>
+</body>
+</html>

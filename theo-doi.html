@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theo dõi đơn hàng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .track-container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-track { background: #2c5f2d; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+        .order-item { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 5px; position: relative; }
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status-cho { background: #fff3cd; color: #856404; } /* Chờ xác nhận */
+        .status-dang { background: #d1ecf1; color: #0c5460; } /* Đang giao */
+        .status-xong { background: #d4edda; color: #155724; } /* Hoàn thành */
+    </style>
+</head>
+<body>
+    <div class="track-container">
+        <h2><i class="fa fa-truck"></i> THEO DÕI ĐƠN HÀNG</h2>
+        <div class="search-box">
+            <input type="text" id="track-sdt" placeholder="Nhập số điện thoại đặt hàng...">
+            <button class="btn-track" onclick="trackOrder()">Tìm kiếm</button>
+        </div>
+        <div id="track-result">
+            </div>
+    </div>
+
+    <script>
+        async function trackOrder() {
+            const sdt = document.getElementById('track-sdt').value;
+            if (!sdt) return alert("Vui lòng nhập số điện thoại!");
+
+            try {
+                const res = await fetch(`https://nongsansonla.loca.lt/api/theo-doi-don-hang/${sdt}`);
+                const orders = await res.json();
+                const resultDiv = document.getElementById('track-result');
+
+                if (orders.length === 0) {
+                    resultDiv.innerHTML = "<p>Không tìm thấy đơn hàng nào với số điện thoại này.</p>";
+                    return;
+                }
+
+                resultDiv.innerHTML = orders.map(o => {
+                    let statusClass = "status-cho";
+                    if(o.TrangThaiDonHang.includes("giao")) statusClass = "status-dang";
+                    if(o.TrangThaiDonHang.includes("thành") || o.TrangThaiDonHang.includes("thành")) statusClass = "status-xong";
+
+                    return `
+                        <div class="order-item">
+                            <p><strong>Mã đơn: #${o.MaDonHang}</strong></p>
+                            <p>Ngày đặt: ${new Date(o.NgayDat).toLocaleDateString('vi-VN')}</p>
+                            <p>Tổng tiền: <span style="color:red">${Number(o.TongTien).toLocaleString()}đ</span></p>
+                            <p>Thanh toán: <b>${o.TrangThaiThanhToan}</b></p>
+                            <p>Trạng thái: <span class="status-badge ${statusClass}">${o.TrangThaiDonHang}</span></p>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                alert("Lỗi kết nối máy chủ!");
+            }
+        }
+    </script>
+</body>
+</html>

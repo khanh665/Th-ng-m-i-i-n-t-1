@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đơn hàng của tôi - Sơn La Agri</title>
+    <link rel="stylesheet" href="DoAn.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .order-history-container { max-width: 1000px; margin: 40px auto; padding: 20px; background: white; border-radius: 10px; }
+        .order-card { border: 1px solid #eee; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
+        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #f5f5f5; padding-bottom: 10px; margin-bottom: 10px; }
+        .status-badge { padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+        .status-pending { background: #fff3e0; color: #ff9800; } /* Chờ xác nhận */
+        .status-completed { background: #e8f5e9; color: #4caf50; } /* Hoàn thành */
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="container"><a href="DoAn.html" class="logo">SƠN LA <span>AGRI</span></a></div>
+    </header>
+
+    <div class="order-history-container">
+        <h2><i class="fa fa-history"></i> LỊCH SỬ ĐƠN HÀNG</h2>
+        <div id="order-list">
+            </div>
+    </div>
+
+    <script>
+        async function loadMyOrders() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                alert("Vui lòng đăng nhập!");
+                window.location.href = 'DoAn.html';
+                return;
+            }
+
+            const res = await fetch(`https://nongsansonla.loca.lt/api/my-orders/${user.SoDienThoai}`);
+            const data = await res.json();
+            const list = document.getElementById('order-list');
+
+            if (data.length === 0) {
+                list.innerHTML = "<p>Bạn chưa có đơn hàng nào.</p>";
+                return;
+            }
+
+            list.innerHTML = data.map(o => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span>Mã đơn: <strong>#${o.MaDonHang}</strong></span>
+                        <span class="status-badge ${o.TrangThaiDonHang === 'Hoàn thành' ? 'status-completed' : 'status-pending'}">
+                            ${o.TrangThaiDonHang}
+                        </span>
+                    </div>
+                    <p>Ngày đặt: ${new Date(o.NgayDat).toLocaleString('vi-VN')}</p>
+                    <p>Địa chỉ: ${o.DiaChiGiaoHang}</p>
+                    <p>Tổng tiền: <strong style="color:red">${Number(o.TongTien).toLocaleString()} đ</strong></p>
+                </div>
+            `).join('');
+        }
+        window.onload = loadMyOrders;
+    </script>
+</body>
+</html>

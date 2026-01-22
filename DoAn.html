@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơn La Agri - Thực Phẩm Sạch</title>
+    <link rel="stylesheet" href="DoAn.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* CSS bổ sung cho phần thông số trong modal */
+        .product-stats { display: flex; gap: 15px; margin: 10px 0; font-size: 14px; color: #666; }
+        .product-stats span b { color: #2c5f2d; }
+        .description-box { margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 8px; border-left: 4px solid #4CAF50; }
+        .description-box h4 { margin-bottom: 5px; font-size: 15px; color: #333; }
+        #detail-desc { font-size: 14px; line-height: 1.6; color: #555; white-space: pre-line; }
+
+        /* Hiệu ứng cho ngôi sao có thể nhấn */
+        .clickable-star { cursor: pointer; transition: 0.3s; }
+        .clickable-star:hover { color: #ee4d2d !important; }
+        .clickable-star u { text-decoration: none; border-bottom: 1px dashed #ee4d2d; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <span><i class="fa fa-phone"></i> Hotline: 0123 456 789</span>
+            <span><i class="fa fa-map-marker-alt"></i> Sơn La, Việt Nam</span>
+        </div>
+    </div>
+
+    <header class="main-header">
+        <div class="container header-flex">
+                <a href="DoAn.html" class="logo">SƠN LA <span>AGRI</span></a>
+                
+                <div class="search-box" style="position: relative;">
+            <input type="text" id="header-search-input" 
+                placeholder="Tìm sản phẩm nông sản..." 
+                oninput="handleSuggest()" 
+                autocomplete="off">
+            <button onclick="handleHeaderSearch()"><i class="fa fa-search"></i></button>
+            
+            <div id="search-suggestions" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ddd; border-radius: 0 0 5px 5px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            </div>
+        </div>
+            
+
+            <div class="header-right-actions">
+                <div id="auth-ui" class="auth-ui">
+                    <button onclick="toggleAuthModal()" class="btn-login-trigger">
+                        <i class="fa fa-user-circle"></i><span>Đăng nhập</span>
+                    </button>
+                </div>
+                <div class="cart-wrapper" id="cart-btn" onclick="toggleCart()">
+                    <i class="fa fa-shopping-basket"></i>
+                    <span class="cart-badge" id="cart-count">0</span>
+                </div>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <div class="container">
+                <ul class="nav-menu">
+                    <li class="has-dropdown">
+                        <a href="javascript:void(0)" class="nav-link"><i class="fa fa-bars"></i> DANH MỤC SẢN PHẨM</a>
+                        <ul id="parent-category-list" class="dropdown-menu"></ul>
+                    </li>
+                    <li><a href="DoAn.html" class="nav-link">TRANG CHỦ</a></li>
+                    <li><a href="javascript:void(0)" onclick="taiSanPham()" class="nav-link">TẤT CẢ SẢN PHẨM</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero-banner">
+        <div class="container">
+            <div class="banner-content">
+                <h2>NÔNG SẢN SẠCH TỪ TÂY BẮC</h2>
+                <p>An toàn cho sức khỏe - Tươi ngon mỗi ngày</p>
+                <button class="btn-shop" onclick="window.scrollTo({top: 600, behavior:'smooth'})">MUA NGAY</button>
+            </div>
+        </div>
+    </section>
+    
+    
+    <main class="container">
+        <div class="section-title">
+            <h2>SẢN PHẨM MỚI NHẤT</h2>
+            <div class="line"></div>
+        </div>
+        <div class="product-grid" id="product-list"></div>
+    </main>
+
+    <div id="product-detail-modal" class="modal">
+        <div class="modal-content detail-layout" style="max-width: 900px; width: 95%; position: relative; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" onclick="document.getElementById('product-detail-modal').style.display='none'" 
+                style="position: absolute; right: 20px; top: 10px; cursor: pointer; font-size: 28px; z-index: 10;">&times;</span>
+            
+            <div class="modal-left">
+                <img id="detail-img" src="" style="width:100%; border-radius:10px; object-fit: cover;">
+            </div>
+
+            <div class="modal-right">
+                <h2 id="detail-name"></h2>
+                
+                <div class="product-stats">
+                    <span><i class="fa fa-shopping-cart"></i> Đã bán: <b id="detail-bought">0</b></span>
+                    <span class="clickable-star" onclick="scrollToReviews()">
+                        <i class="fa fa-star" style="color:#ff9800"></i> 
+                        <u style="color:#ee4d2d">Đánh giá: <b id="detail-reviews-count">0</b></u>
+                    </span>
+                </div>
+
+                <div id="detail-price" style="color: #4CAF50; font-size: 24px; font-weight: bold; margin: 10px 0;"></div>
+                <p class="stock-status"><i class="fa fa-box"></i> Kho: <span id="detail-stock"></span></p>
+
+                <div class="description-box">
+                    <h4>Mô tả sản phẩm:</h4>
+                    <p id="detail-desc"></p>
+                </div>
+
+                <hr style="margin: 15px 0;">
+                <div class="qty-selector">
+                    <label>Số lượng:</label>
+                    <div class="qty-btn-group">
+                        <button onclick="changeQty(-1)">-</button>
+                        <input type="number" id="buy-qty" value="1" readonly>
+                        <button onclick="changeQty(1)">+</button>
+                    </div>
+                </div>
+                <button id="add-to-cart-final" class="btn-buy-now">THÊM VÀO GIỎ HÀNG</button>
+
+                <div id="reviews-section-target" class="reviews-container" style="margin-top: 35px; border-top: 2px solid #eee; padding-top: 20px;">
+                    <h4 style="color: #ee4d2d; margin-bottom: 15px; font-size: 18px;">ĐÁNH GIÁ SẢN PHẨM</h4>
+                    
+                    <div class="rating-filter-box" style="background: #fffbf8; border: 1px solid #f9ede5; padding: 20px; display: flex; gap: 30px; align-items: center; margin-bottom: 20px; border-radius: 4px;">
+                        <div class="rating-overview" style="text-align: center; flex: 1;">
+                            <div style="color: #ee4d2d; font-size: 28px; font-weight:bold;"><span id="avg-stars-large">0.0</span> trên 5</div>
+                            <div style="color: #ee4d2d; font-size: 16px;">⭐⭐⭐⭐⭐</div>
+                        </div>
+                        <div class="filter-buttons" style="display: flex; flex-wrap: wrap; gap: 8px; flex: 3;" id="rating-filters">
+                            <button class="btn-filter active" onclick="filterReviews(0)">Tất Cả</button>
+                            <button class="btn-filter" onclick="filterReviews(5)">5 Sao (<span id="count-5">0</span>)</button>
+                            <button class="btn-filter" onclick="filterReviews(4)">4 Sao (<span id="count-4">0</span>)</button>
+                            <button class="btn-filter" onclick="filterReviews(3)">3 Sao (<span id="count-3">0</span>)</button>
+                            <button class="btn-filter" onclick="filterReviews(2)">2 Sao (<span id="count-2">0</span>)</button>
+                            <button class="btn-filter" onclick="filterReviews(1)">1 Sao (<span id="count-1">0</span>)</button>
+                        </div>
+                    </div>
+
+                    <div id="reviews-list-content" style="max-height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>   
+
+    <div id="quick-cart" class="cart-sidebar">  
+        <div class="cart-header">
+            <h3>Giỏ hàng của bạn</h3>
+            <span class="close-cart" onclick="toggleCart()">&times;</span>
+        </div>
+        <div id="cart-items-list" class="cart-body"></div>
+        <div class="cart-footer">
+            <div class="total-price">Tổng cộng: <span id="cart-total">0 đ</span></div>
+            <button class="btn-checkout" onclick="checkCartBeforeCheckout()">TIẾN HÀNH ĐẶT HÀNG</button>
+        </div>
+    </div>
+    <div id="cart-overlay" class="overlay" onclick="toggleCart()"></div>
+
+    <div id="auth-modal" class="auth-modal">
+        <div class="auth-container">
+            <span class="close-auth" onclick="toggleAuthModal()">&times;</span>
+            <div class="auth-tabs">
+                <button id="tab-login" class="active" onclick="switchAuthMode('login')">Đăng nhập</button>
+                <button id="tab-reg" onclick="switchAuthMode('reg')">Đăng ký</button>
+            </div>
+            <div id="form-login" class="auth-form">
+                <h3>Mừng bạn quay lại!</h3>
+                <input type="text" id="login-email" placeholder="Email hoặc Số điện thoại">
+                <input type="password" id="login-pass" placeholder="Mật khẩu">
+                <button onclick="handleLogin()" class="btn-auth-submit">ĐĂNG NHẬP</button>
+            </div>
+            <div id="form-reg" class="auth-form" style="display:none;">
+                <h3>Tạo tài khoản mới</h3>
+                <input type="text" id="reg-name" placeholder="Họ và tên">
+                <input type="email" id="reg-email" placeholder="Email">
+                <input type="tel" id="reg-phone" placeholder="Số điện thoại">
+                <input type="password" id="reg-pass" placeholder="Mật khẩu">
+                <input type="password" id="reg-repass" placeholder="Nhập lại mật khẩu">
+                <button onclick="handleRegister()" class="btn-auth-submit">ĐĂNG KÝ NGAY</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="DoAn.js"></script>
+</body>
+</html>

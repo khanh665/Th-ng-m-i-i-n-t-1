@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thanh Toán - Sơn La Agri</title>
+    <link rel="stylesheet" href="DoAn.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .checkout-container { display: grid; grid-template-columns: 1fr 400px; gap: 30px; margin: 40px auto; max-width: 1200px; padding: 0 15px; }
+        .checkout-section { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .checkout-section h3 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; color: #2c5f2d; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
+        .order-summary { position: sticky; top: 100px; }
+        .review-item { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .total-row { border-top: 2px solid #eee; padding-top: 15px; margin-top: 15px; font-weight: bold; font-size: 18px; color: #d32f2f; }
+        .btn-confirm { width: 100%; padding: 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="container"><a href="DoAn.html" class="logo">SƠN LA <span>AGRI</span></a></div>
+    </header>
+
+    <div class="checkout-container">
+        <div class="info-form">
+            <form id="complete-checkout-form">
+                <div class="checkout-section">
+                    <h3>THÔNG TIN GIAO HÀNG</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Họ và tên</label>
+                            <input type="text" id="cus-name" placeholder="Nguyễn Văn A" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="tel" id="cus-phone" placeholder="09xxxxxxx" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tỉnh / Thành phố</label>
+                            <input type="text" id="cus-city" placeholder="Ví dụ: Sơn La" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quận / Huyện</label>
+                            <input type="text" id="cus-dist" placeholder="Ví dụ: Huyện Mai Sơn" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phường / Xã</label>
+                            <input type="text" id="cus-ward" placeholder="Ví dụ: Xã Hát Lót" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Số nhà, tên đường</label>
+                            <input type="text" id="cus-address" placeholder="Ví dụ: 123 Đường CMT8" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Hình thức giao hàng</label>
+                            <select id="shipping-method" onchange="updateShipping()">
+                                <option value="Giao hàng tiêu chuẩn" data-price="30000">Giao hàng tiêu chuẩn (30.000đ)</option>
+                                <option value="Giao hàng nhanh" data-price="50000">Giao hàng nhanh (50.000đ)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Đơn vị vận chuyển</label>
+                            <select id="shipping-unit">
+                                <option>Giao Hàng Tiết Kiệm</option>
+                                <option>Viettel Post</option>
+                                <option>VNPost</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Phương thức thanh toán</label>
+                        <select id="payment-method" onchange="toggleOnlinePayment()">
+                            <option value="Tiền mặt">Tiền mặt khi giao hàng (COD)</option>
+                            <option value="Chuyển khoản">Thanh toán Online (Quét mã QR)</option>
+                        </select>
+                    </div>
+
+                    <div id="qr-container" style="display:none; text-align: center; border: 2px dashed #4CAF50; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <h4 style="color: #2c5f2d;">Quét mã QR để thanh toán</h4>
+                        <img id="qr-image" src="" style="max-width: 200px; margin: 10px 0;">
+                        <p style="font-size: 12px;">Nội dung: <strong id="qr-content"></strong></p>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="order-summary">
+            <div class="checkout-section">
+                <h3>ĐƠN HÀNG CỦA BẠN</h3>
+                <div id="checkout-items-list"></div>
+                <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px;">
+                    <div class="review-item"><span>Tạm tính:</span> <span id="subtotal">0 đ</span></div>
+                    <div class="review-item"><span>Phí vận chuyển:</span> <span id="ship-fee">30.000 đ</span></div>
+                    <div class="total-row"><span>TỔNG CỘNG:</span> <span id="final-total">0 đ</span></div>
+                </div>
+                <button type="submit" form="complete-checkout-form" class="btn-confirm">XÁC NHẬN ĐẶT HÀNG</button>
+            </div>
+        </div>
+    </div>
+    <script src="checkout.js"></script>
+</body>
+</html>

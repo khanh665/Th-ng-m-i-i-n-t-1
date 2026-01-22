@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý danh mục - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --admin-green: #2c5f2d; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--admin-green); padding-bottom: 15px; margin-bottom: 20px; }
+        h2 { color: var(--admin-green); margin: 0; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: var(--admin-green); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-add { background: var(--admin-green); color: white; }
+        .btn-edit { background: #3498db; color: white; margin-right: 5px; }
+        .btn-delete { background: var(--danger); color: white; }
+        .btn:hover { opacity: 0.8; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; width: 400px; position: relative; }
+        .modal-header { margin-bottom: 20px; color: var(--admin-green); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        /* CSS cho thanh điều hướng Admin */
+        .admin-nav-bar {
+            background: #2c5f2d;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .admin-nav-bar a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .admin-nav-bar a:hover {
+            background: #3e7a3f;
+        }
+        .admin-nav-bar a.active {
+            background: #ff9800; /* Màu cam để đánh dấu trang hiện tại */
+        }
+    </style>
+</head>
+<body>
+ 
+<nav class="admin-nav-bar">
+    <a href="admin_products.html" id="nav-prod">QUẢN LÝ SẢN PHẨM</a>
+    <a href="admin_categories.html" id="nav-cat">QUẢN LÝ DANH MỤC</a>
+    <a href="admin_orders.html" id="nav-order">QUẢN TRỊ ĐƠN HÀNG</a>
+    <a href="DoAn.html" style="background: #e74c3c;">THOÁT ADMIN</a>
+</nav>
+<div class="container">
+    <div class="header">
+        <h2><i class="fa fa-list-alt"></i> QUẢN LÝ DANH MỤC</h2>
+        <button class="btn btn-add" onclick="openModal()"><i class="fa fa-plus"></i> Thêm danh mục</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên danh mục</th>
+                <th>Thuộc danh mục cha</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="category-table-body">
+            </tbody>
+    </table>
+</div>
+
+<div id="categoryModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3 id="modalTitle">Thêm danh mục</h3></div>
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+            <label>Tên danh mục</label>
+            <input type="text" id="cat-name" placeholder="Ví dụ: Rau sạch">
+        </div>
+        <div class="form-group">
+            <label>Danh mục cha (Nếu có)</label>
+            <select id="cat-parent">
+                <option value="">-- Là danh mục gốc --</option>
+                </select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeModal()">Hủy</button>
+            <button class="btn btn-add" onclick="saveCategory()">Lưu dữ liệu</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // Kiểm tra quyền Admin
+    // Cho trang admin_orders.html hoặc admin_categories.html
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.VaiTro !== 'admin') {
+        alert("Bạn không có quyền truy cập vùng này!");
+        window.location.href = 'DoAn.html';
+    }
+
+    // Cho trang profile.html
+    if (!user) {
+        window.location.href = 'DoAn.html';
+    }
+
+    let allCategories = [];
+
+    async function loadData() {
+        try {
+            const res = await fetch('https://nongsansonla.loca.lt/api/danhmuc');
+            allCategories = await res.json();
+            
+            // Đổ vào bảng
+            const tbody = document.getElementById('category-table-body');
+            tbody.innerHTML = allCategories.map(item => {
+                const parent = allCategories.find(c => c.MaDanhMuc === item.MaDanhMucCha);
+                return `
+                    <tr>
+                        <td>${item.MaDanhMuc}</td>
+                        <td><strong>${item.TenDanhMuc}</strong></td>
+                        <td>${parent ? parent.TenDanhMuc : '<span style="color:#aaa">Gốc</span>'}</td>
+                        <td>
+                            <button class="btn btn-edit" onclick="openModal(${item.MaDanhMuc})"><i class="fa fa-edit"></i></button>
+                            <button class="btn btn-delete" onclick="deleteCategory(${item.MaDanhMuc})"><i class="fa fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Đổ vào Select trong Modal (Chỉ hiện các danh mục cha để chọn)
+            const select = document.getElementById('cat-parent');
+            const parents = allCategories.filter(c => !c.MaDanhMucCha);
+            select.innerHTML = '<option value="">-- Là danh mục gốc --</option>' + 
+                parents.map(p => `<option value="${p.MaDanhMuc}">${p.TenDanhMuc}</option>`).join('');
+        } catch (e) { alert("Lỗi tải dữ liệu!"); }
+    }
+
+    function openModal(id = null) {
+        const modal = document.getElementById('categoryModal');
+        modal.style.display = 'flex';
+        if (id) {
+            const cat = allCategories.find(c => c.MaDanhMuc === id);
+            document.getElementById('modalTitle').innerText = "Sửa danh mục";
+            document.getElementById('edit-id').value = id;
+            document.getElementById('cat-name').value = cat.TenDanhMuc;
+            document.getElementById('cat-parent').value = cat.MaDanhMucCha || "";
+        } else {
+            document.getElementById('modalTitle').innerText = "Thêm danh mục mới";
+            document.getElementById('edit-id').value = "";
+            document.getElementById('cat-name').value = "";
+            document.getElementById('cat-parent').value = "";
+        }
+    }
+
+    function closeModal() { document.getElementById('categoryModal').style.display = 'none'; }
+
+    async function saveCategory() {
+        const id = document.getElementById('edit-id').value;
+        const name = document.getElementById('cat-name').value;
+        const parentId = document.getElementById('cat-parent').value;
+
+        if (!name) return alert("Vui lòng nhập tên danh mục!");
+
+        const url = id ? `https://nongsansonla.loca.lt/api/admin/danhmuc/${id}` : 'https://nongsansonla.loca.lt/api/admin/danhmuc';
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tenDanhMuc: name, maDanhMucCha: parentId })
+        });
+        
+        if (res.ok) {
+            closeModal();
+            loadData();
+            alert("✅ Cập nhật thành công!");
+        }
+    }
+
+    async function deleteCategory(id) {
+        if (!confirm("Bạn có chắc muốn xóa? Nếu xóa danh mục cha, các danh mục con sẽ bị ảnh hưởng!")) return;
+        const res = await fetch(`https://nongsansonla.loca.lt/api/admin/danhmuc/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) loadData();
+        else alert(data.message);
+    }
+
+    window.onload = loadData;
+</script>
+</body>
+</html>

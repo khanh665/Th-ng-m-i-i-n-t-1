@@ -143,7 +143,7 @@
     // 3. TẢI LỊCH SỬ ĐƠN HÀNG (Dành cho trạng thái đã kết thúc)
     async function loadOrders() {
         try {
-            const res = await fetch(`http://localhost:5000/api/my-orders/${user.SoDienThoai}`);
+            const res = await fetch(`https://nongsansonla.loca.lt/api/my-orders/${user.SoDienThoai}`);
             const data = await res.json();
             const list = document.getElementById('my-orders-list');
             
@@ -295,7 +295,7 @@
         if (stars === 0) return alert("Vui lòng chọn số sao!");
 
         try {
-            const res = await fetch('http://localhost:5000/api/danhgia', {
+            const res = await fetch('https://nongsansonla.loca.lt/api/danhgia', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ maDH, maSP, maND: user.MaNguoiDung, soSao: stars, noiDung: content })
@@ -333,7 +333,7 @@
         const hoTen = document.getElementById('p-name').value;
         const sdt = document.getElementById('p-phone').value;
         try {
-            const res = await fetch('http://localhost:5000/api/user/update', {
+            const res = await fetch('https://nongsansonla.loca.lt/api/user/update', {
                 method: 'PUT', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ id: user.MaNguoiDung, hoTen, sdt })
             });
@@ -350,7 +350,7 @@
         const mkMoi = document.getElementById('new-pass').value;
         if(mkMoi !== document.getElementById('confirm-pass').value) return alert("Mật khẩu nhập lại không khớp!");
         try {
-            const res = await fetch('http://localhost:5000/api/user/change-password', {
+            const res = await fetch('https://nongsansonla.loca.lt/api/user/change-password', {
                 method: 'PUT', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ id: user.MaNguoiDung, mkCu, mkMoi })
             });

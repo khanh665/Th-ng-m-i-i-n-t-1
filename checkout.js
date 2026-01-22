@@ -111,7 +111,7 @@ document.getElementById('complete-checkout-form').onsubmit = async (e) => {
     };
 
     try {
-        const res = await fetch('https://fat-fish-17.loca.lt/api/dathang', {
+        const res = await fetch('https://nongsansonla.loca.lt/api/dathang', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderData)

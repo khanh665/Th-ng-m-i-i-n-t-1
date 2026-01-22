@@ -216,7 +216,7 @@ async function handleRegister() {
     if (matKhau !== repass) return alert("Mật khẩu nhập lại không khớp!");
 
     try {
-        const res = await fetch('http://localhost:5000/api/register', {
+        const res = await fetch('https://nongsansonla.loca.lt/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ hoTen, email, matKhau, sdt })
@@ -234,7 +234,7 @@ async function handleLogin() {
     if (!userInput || !pass) return alert("Vui lòng nhập tài khoản và mật khẩu!");
 
     try {
-        const res = await fetch('http://localhost:5000/api/login', {
+        const res = await fetch('https://nongsansonla.loca.lt/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: userInput, matKhau: pass })
@@ -264,7 +264,7 @@ function handleLogout() {
 // Thêm hàm này và gọi trong DOMContentLoaded
 async function taiDanhMuc() {
     try {
-        const res = await fetch('http://localhost:5000/api/danhmuc');
+        const res = await fetch('https://nongsansonla.loca.lt/api/danhmuc');
         const data = await res.json();
         const list = document.getElementById('category-list');
         
@@ -279,7 +279,7 @@ async function taiDanhMuc() {
 
 async function taiDanhMucHienThi() {
     try {
-        const res = await fetch('http://localhost:5000/api/danhmuc');
+        const res = await fetch('https://nongsansonla.loca.lt/api/danhmuc');
         const data = await res.json();
         const parentList = document.getElementById('parent-category-list');
 
@@ -320,7 +320,7 @@ async function locSanPhamTheoDanhMuc(id, ten) {
         // Cập nhật tiêu đề
         document.querySelector('.section-title h2').innerText = ten.toUpperCase();
 
-        const res = await fetch(`http://localhost:5000/api/sanpham/danhmuc/${id}`);
+        const res = await fetch(`https://nongsansonla.loca.lt/api/sanpham/danhmuc/${id}`);
         const data = await res.json();
         
         if (data.length === 0) {
@@ -374,7 +374,7 @@ async function locSanPhamTheoDanhMuc(id, ten) {
         const titleArea = document.querySelector('.section-title h2');
         if(titleArea) titleArea.innerText = ten.toUpperCase();
 
-        const res = await fetch(`http://localhost:5000/api/sanpham/danhmuc/${id}`);
+        const res = await fetch(`https://nongsansonla.loca.lt/api/sanpham/danhmuc/${id}`);
         const data = await res.json();
         
         renderProducts(data); // Hiển thị sản phẩm đã lọc
@@ -392,7 +392,7 @@ let allProducts = []; // Khai báo mảng toàn cục để lưu trữ sản ph�
 async function taiSanPham() {
     const list = document.getElementById('product-list');
     try {
-        const res = await fetch('http://localhost:5000/api/sanpham');
+        const res = await fetch('https://nongsansonla.loca.lt/api/sanpham');
         const data = await res.json();
         allProducts = data; // Lưu dữ liệu vào mảng để dùng cho Modal
         
@@ -437,7 +437,7 @@ window.moModalDetail = async (id) => {
 
     // Tải đánh giá (giữ nguyên logic fetch của bạn)
     try {
-        const res = await fetch(`http://localhost:5000/api/sanpham/danhgia/chitiet/${id}`);
+        const res = await fetch(`https://nongsansonla.loca.lt/api/sanpham/danhgia/chitiet/${id}`);
         const data = await res.json();
         currentReviews = data.reviews;
         const score = data.avg ? Number(data.avg).toFixed(1) : "0.0";
